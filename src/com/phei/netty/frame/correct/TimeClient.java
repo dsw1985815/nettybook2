@@ -45,8 +45,12 @@ public class TimeClient {
 			public void initChannel(SocketChannel ch)
 				throws Exception {
 			    ch.pipeline().addLast(
+			    		//添加换行符解码器，它会遍历ByteBuf的所有字节，找到 \n \r\n 并以此位置为结尾，可读索引到结尾位置形成一行。
+						//如果连续读取到的内容超过最大就抛异常，读取到的内容也忽略掉
 				    new LineBasedFrameDecoder(1024));
+			    //将读取到的二进制码流转化为string
 			    ch.pipeline().addLast(new StringDecoder());
+			    // LineBasedFrameDecoder + StringDecoder 就是作为按行切换的文本解码器，用来解决TCP协议的粘包拆包问题
 			    ch.pipeline().addLast(new TimeClientHandler());
 			}
 		    });

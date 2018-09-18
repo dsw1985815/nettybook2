@@ -50,8 +50,11 @@ public class EchoServer {
 			@Override
 			public void initChannel(SocketChannel ch)
 				throws Exception {
+				//定义 分隔符缓冲对象 ，使用$_ 为分隔符 解析码流，当码流超过最大长度仍然没有找到分隔符，抛出TooLongFrameException，
+				//这是netty可靠性保证中为了防止内存溢出的设计
 			    ByteBuf delimiter = Unpooled.copiedBuffer("$_"
 				    .getBytes());
+			    //添加分隔符码流解码器 使用1024字节作为最大值，使用定义好的分隔符缓冲对象。·
 			    ch.pipeline().addLast(
 				    new DelimiterBasedFrameDecoder(1024,
 					    delimiter));

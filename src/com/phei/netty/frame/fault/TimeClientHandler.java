@@ -47,6 +47,7 @@ public class TimeClientHandler extends ChannelHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
 	ByteBuf message = null;
+	//循环发送100条消息到服务端
 	for (int i = 0; i < 100; i++) {
 	    message = Unpooled.buffer(req.length);
 	    message.writeBytes(req);
@@ -60,6 +61,7 @@ public class TimeClientHandler extends ChannelHandlerAdapter {
 	ByteBuf buf = (ByteBuf) msg;
 	byte[] req = new byte[buf.readableBytes()];
 	buf.readBytes(req);
+	//按照设计，应该打印100条计数消息
 	String body = new String(req, "UTF-8");
 	System.out.println("Now is : " + body + " ; the counter is : "
 		+ ++counter);

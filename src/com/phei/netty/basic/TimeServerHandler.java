@@ -27,9 +27,13 @@ import io.netty.channel.ChannelHandlerContext;
  */
 public class TimeServerHandler extends ChannelHandlerAdapter {
 
+	//ChannelHandlerAdapter 继承自ChannelHandler
+	//本类用于对IO进行读写操作，关注channelRead和exceptionCaught方法
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
 	    throws Exception {
+    	//msg换成Netty定义的ByteBuf对象
 	ByteBuf buf = (ByteBuf) msg;
 	byte[] req = new byte[buf.readableBytes()];
 	buf.readBytes(req);
@@ -43,11 +47,14 @@ public class TimeServerHandler extends ChannelHandlerAdapter {
 
     @Override
     public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+    	//netty中，ctx的write方法并不会把内容写入到SocketChannel
+		//而是写入到buf中，只有调用flush才会写入SocketChannel并发送
 	ctx.flush();
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-	ctx.close();
+	//发生异常时，释放资源
+    	ctx.close();
     }
 }

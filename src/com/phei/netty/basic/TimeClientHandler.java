@@ -32,6 +32,7 @@ public class TimeClientHandler extends ChannelHandlerAdapter {
     private static final Logger logger = Logger
 	    .getLogger(TimeClientHandler.class.getName());
 
+    //重点关注3个方法，channelActive 、channelRead 、 exceptionCaught
     private final ByteBuf firstMessage;
 
     /**
@@ -46,12 +47,14 @@ public class TimeClientHandler extends ChannelHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
-	ctx.writeAndFlush(firstMessage);
+	//连接成功后，会先发送查询的指令给服务端
+        ctx.writeAndFlush(firstMessage);
     }
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
 	    throws Exception {
+        //从ByteBuf中读取并打印结果
 	ByteBuf buf = (ByteBuf) msg;
 	byte[] req = new byte[buf.readableBytes()];
 	buf.readBytes(req);
@@ -61,7 +64,7 @@ public class TimeClientHandler extends ChannelHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-	// 释放资源
+	// 发生错误，释放资源
 	logger.warning("Unexpected exception from downstream : "
 		+ cause.getMessage());
 	ctx.close();

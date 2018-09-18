@@ -25,7 +25,7 @@ public class TimeClient {
     /**
      * @param args
      */
-    public static void main(String[] args) {
+	public static void main(String[] args) {
 
 	int port = 8080;
 	if (args != null && args.length > 0) {
@@ -35,6 +35,7 @@ public class TimeClient {
 		// 采用默认值
 	    }
 	}
+	//创建个线程作为客户端
 	new Thread(new TimeClientHandle("127.0.0.1", port), "TimeClient-001")
 		.start();
     }

@@ -33,18 +33,21 @@ public class TimeServer {
 
     public void bind(int port) throws Exception {
 	// 配置服务端的NIO线程组
+		//一个用于接受客户端的链接，一个用于SocketChannel的网络读写
 	EventLoopGroup bossGroup = new NioEventLoopGroup();
 	EventLoopGroup workerGroup = new NioEventLoopGroup();
 	try {
+		//netty的辅助启动类，目的是为了降低代码复杂度
 	    ServerBootstrap b = new ServerBootstrap();
 	    b.group(bossGroup, workerGroup)
-		    .channel(NioServerSocketChannel.class)
+		    .channel(NioServerSocketChannel.class) //NioServerSocketChannel对应于NIO的ServerSocketChannel
 		    .option(ChannelOption.SO_BACKLOG, 1024)
-		    .childHandler(new ChildChannelHandler());
-	    // 绑定端口，同步等待成功
+		    .childHandler(new ChildChannelHandler()); //绑定io事件的处理类，它类似于Reactor模式中的Handler，使用内部定义类ChildChannelHandler初始化Handler
+	    // 绑定端口bind，同步阻塞等待链接成功sync
 	    ChannelFuture f = b.bind(port).sync();
-
-	    // 等待服务端监听端口关闭
+		//直接关闭链路，释放资源
+		//f.channel().close();
+	    // 等待服务端监听端口关闭，则唤醒当前线程退出main函数
 	    f.channel().closeFuture().sync();
 	} finally {
 	    // 优雅退出，释放线程池资源
@@ -56,6 +59,7 @@ public class TimeServer {
     private class ChildChannelHandler extends ChannelInitializer<SocketChannel> {
 	@Override
 	protected void initChannel(SocketChannel arg0) throws Exception {
+		//处理类按照添加顺序执行
 	    arg0.pipeline().addLast(new TimeServerHandler());
 	}
 

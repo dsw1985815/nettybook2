@@ -37,8 +37,10 @@ public class TimeServerHandler extends ChannelHandlerAdapter {
 	buf.readBytes(req);
 	String body = new String(req, "UTF-8").substring(0, req.length
 		- System.getProperty("line.separator").length());
+	//按照设计应该打印100条日志
 	System.out.println("The time server receive order : " + body
 		+ " ; the counter is : " + ++counter);
+	//按照设计应该去除掉了分号 ; ，得到 QUERY TIME ORDER字符串
 	String currentTime = "QUERY TIME ORDER".equalsIgnoreCase(body) ? new java.util.Date(
 		System.currentTimeMillis()).toString() : "BAD ORDER";
 	currentTime = currentTime + System.getProperty("line.separator");

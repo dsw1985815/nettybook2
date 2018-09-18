@@ -39,5 +39,24 @@ public class TimeServer {
 	}
 	MultiplexerTimeServer timeServer = new MultiplexerTimeServer(port);
 	new Thread(timeServer, "NIO-MultiplexerTimeServer-001").start();
+	
     }
+
+	/**
+	 线程堆栈信息
+	 表示调用了系统的selector poll 指令 进行套接字处理
+	 * "NIO-MultiplexerTimeServer-001@864" prio=5 tid=0xd nid=NA runnable
+	 java.lang.Thread.State: RUNNABLE
+	 at sun.nio.ch.WindowsSelectorImpl$SubSelector.poll0(WindowsSelectorImpl.java:-1)
+	 at sun.nio.ch.WindowsSelectorImpl$SubSelector.poll(WindowsSelectorImpl.java:296)
+	 at sun.nio.ch.WindowsSelectorImpl$SubSelector.access$400(WindowsSelectorImpl.java:278)
+	 at sun.nio.ch.WindowsSelectorImpl.doSelect(WindowsSelectorImpl.java:159)
+	 at sun.nio.ch.SelectorImpl.lockAndDoSelect(SelectorImpl.java:86)
+	 - locked <0x3a2> (a sun.nio.ch.WindowsSelectorImpl)
+	 - locked <0x3a3> (a java.util.Collections$UnmodifiableSet)
+	 - locked <0x3a4> (a sun.nio.ch.Util$3)
+	 at sun.nio.ch.SelectorImpl.select(SelectorImpl.java:97)
+	 at com.phei.netty.nio.MultiplexerTimeServer.run(MultiplexerTimeServer.java:79)
+	 at java.lang.Thread.run(Thread.java:748)
+	 */
 }

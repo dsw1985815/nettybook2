@@ -29,6 +29,7 @@ public class AsyncTimeServerHandler implements Runnable {
 
     private int port;
 
+    //在AcceptCompletionHandler正常工作的情况下，允许当前的线程一直阻塞。直到AcceptCompletionHandler执行失败，当前线程将关闭。
     CountDownLatch latch;
     AsynchronousServerSocketChannel asynchronousServerSocketChannel;
 
@@ -51,10 +52,11 @@ public class AsyncTimeServerHandler implements Runnable {
      */
     @Override
     public void run() {
-
+	//实例化服务器端线程开关，doAccept失败时，本线程关闭
 	latch = new CountDownLatch(1);
 	doAccept();
 	try {
+		//线程阻塞，除非开关被唤醒，本线程关闭
 	    latch.await();
 	} catch (InterruptedException e) {
 	    e.printStackTrace();
@@ -62,6 +64,8 @@ public class AsyncTimeServerHandler implements Runnable {
     }
 
     public void doAccept() {
+    	//将本类的实例，和AcceptCompletionHandler处理类实例，传递给ServerSocketChannel，
+		//激活Channel的Accept等待
 	asynchronousServerSocketChannel.accept(this,
 		new AcceptCompletionHandler());
     }

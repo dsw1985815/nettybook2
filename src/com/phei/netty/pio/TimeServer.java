@@ -48,10 +48,12 @@ public class TimeServer {
 	    server = new ServerSocket(port);
 	    System.out.println("The time server is start in port : " + port);
 	    Socket socket = null;
+	    //定义一个处理线程池，把需要处理的handler交给线程池处理，可以避免无限制创建处理线程带来的严重后果。
 	    TimeServerHandlerExecutePool singleExecutor = new TimeServerHandlerExecutePool(
 		    50, 10000);// 创建IO任务线程池
 	    while (true) {
 		socket = server.accept();
+		//接收到客户端请求，交给线程池分配线程处理
 		singleExecutor.execute(new TimeServerHandler(socket));
 	    }
 	} finally {

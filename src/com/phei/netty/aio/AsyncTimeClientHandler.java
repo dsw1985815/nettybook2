@@ -36,6 +36,7 @@ public class AsyncTimeClientHandler implements
     private int port;
     private CountDownLatch latch;
 
+    //创建一个SocketChannel
     public AsyncTimeClientHandler(String host, int port) {
 	this.host = host;
 	this.port = port;
@@ -48,8 +49,9 @@ public class AsyncTimeClientHandler implements
 
     @Override
     public void run() {
-
+	//防止异步初始化未完成，线程过早退出
 	latch = new CountDownLatch(1);
+	//链接服务端，传入2个当前类作为参数，因为当前类实现了CompletionHandler接口
 	client.connect(new InetSocketAddress(host, port), this, this);
 	try {
 	    latch.await();
@@ -63,6 +65,7 @@ public class AsyncTimeClientHandler implements
 	}
     }
 
+    //异步回调成功 处理返回码流
     @Override
     public void completed(Void result, AsyncTimeClientHandler attachment) {
 	byte[] req = "QUERY TIME ORDER".getBytes();

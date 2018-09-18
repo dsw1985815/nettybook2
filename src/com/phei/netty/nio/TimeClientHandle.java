@@ -39,11 +39,14 @@ public class TimeClientHandle implements Runnable {
 
     private volatile boolean stop;
 
+    //客户端线程初始化
     public TimeClientHandle(String host, int port) {
 	this.host = host == null ? "127.0.0.1" : host;
 	this.port = port;
 	try {
+		//获取多路复用选择器
 	    selector = Selector.open();
+	    //创建客户端网络处理Channel并设置为非阻塞
 	    socketChannel = SocketChannel.open();
 	    socketChannel.configureBlocking(false);
 	} catch (IOException e) {
@@ -60,6 +63,7 @@ public class TimeClientHandle implements Runnable {
     @Override
     public void run() {
 	try {
+		//客户端线程启动链接服务端
 	    doConnect();
 	} catch (IOException e) {
 	    e.printStackTrace();
@@ -67,7 +71,9 @@ public class TimeClientHandle implements Runnable {
 	}
 	while (!stop) {
 	    try {
+	    	//每个1秒唤醒selector
 		selector.select(1000);
+		//当有处于激活状态的Channel时，selector返回Channel的SelectionKey集合，迭代集合进行网络读写
 		Set<SelectionKey> selectedKeys = selector.selectedKeys();
 		Iterator<SelectionKey> it = selectedKeys.iterator();
 		SelectionKey key = null;
@@ -75,6 +81,7 @@ public class TimeClientHandle implements Runnable {
 		    key = it.next();
 		    it.remove();
 		    try {
+		    	//处理服务端的返回内容，可能是CONNECT也可能是READ
 			handleInput(key);
 		    } catch (Exception e) {
 			if (key != null) {
@@ -100,18 +107,23 @@ public class TimeClientHandle implements Runnable {
 
     }
 
-    private void handleInput(SelectionKey key) throws IOException {
+	//selector轮询到了Channel的READ，处理Channel读取事件，通过SelectionKey获取输入码流，昝定义ByteBuffer为1M
+	private void handleInput(SelectionKey key) throws IOException {
 
 	if (key.isValid()) {
 	    // 判断是否连接成功
 	    SocketChannel sc = (SocketChannel) key.channel();
+	    //先处理CONNECT
 	    if (key.isConnectable()) {
 		if (sc.finishConnect()) {
+			//连接成功就准备监听服务端的响应，并发送请求
 		    sc.register(selector, SelectionKey.OP_READ);
 		    doWrite(sc);
 		} else
 		    System.exit(1);// 连接失败，进程退出
 	    }
+	    //再处理READ
+	    //当发送请求之前，此时的key是CONNECT转态的，是不可读的，只有当selector监听到READ事件，才是可读，才可以进入下面的代码执行
 	    if (key.isReadable()) {
 		ByteBuffer readBuffer = ByteBuffer.allocate(1024);
 		int readBytes = sc.read(readBuffer);
@@ -121,7 +133,8 @@ public class TimeClientHandle implements Runnable {
 		    readBuffer.get(bytes);
 		    String body = new String(bytes, "UTF-8");
 		    System.out.println("Now is : " + body);
-		    this.stop = true;
+		    //输出结果，退出线程
+		    this.stop = false;
 		} else if (readBytes < 0) {
 		    // 对端链路关闭
 		    key.cancel();
@@ -133,21 +146,28 @@ public class TimeClientHandle implements Runnable {
 
     }
 
+    //连接服务端
     private void doConnect() throws IOException {
 	// 如果直接连接成功，则注册到多路复用器上，发送请求消息，读应答
 	if (socketChannel.connect(new InetSocketAddress(host, port))) {
+		//如果连接成功，将当前Channel注册到selector上，并监听事件SelectionKey.OP_READ，等待服务端的响应返回
 	    socketChannel.register(selector, SelectionKey.OP_READ);
+	    //发送请求
 	    doWrite(socketChannel);
 	} else
+		//如果没有直接连接成功，将当前Channel注册到selector上，并监听事件SelectionKey.OP_CONNECT，这并不代表连接失败了，只是服务端没有返回
+	//TCP握手应答消息，此时我们注册到OP_CONNECT上，当服务响应之后TCP的ack消息后，selector可以轮询到连接就绪状态。
 	    socketChannel.register(selector, SelectionKey.OP_CONNECT);
     }
 
+    //处理发送请求，向Channel中写入请求内容，发送给服务端
     private void doWrite(SocketChannel sc) throws IOException {
 	byte[] req = "QUERY TIME ORDER".getBytes();
 	ByteBuffer writeBuffer = ByteBuffer.allocate(req.length);
 	writeBuffer.put(req);
 	writeBuffer.flip();
 	sc.write(writeBuffer);
+	//hasRemainning判断是否已经读完Buffer
 	if (!writeBuffer.hasRemaining())
 	    System.out.println("Send order 2 server succeed.");
     }

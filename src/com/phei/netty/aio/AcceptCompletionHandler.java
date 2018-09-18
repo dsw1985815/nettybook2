@@ -30,14 +30,19 @@ public class AcceptCompletionHandler implements
     @Override
     public void completed(AsynchronousSocketChannel result,
 	    AsyncTimeServerHandler attachment) {
+    	//此处继续调用accept方法的原因是，可能有新的客户端连接会继续请求接入，所以当接入一个请求之后，进入到此处，
+		//声明channel继续去等待接受新的请求接入，这样形成一个持续接收请求接入的循环
 	attachment.asynchronousServerSocketChannel.accept(attachment, this);
+	//分配一个1M大的缓冲区
 	ByteBuffer buffer = ByteBuffer.allocate(1024);
+	//使用该缓冲区处理结果，具体的处理逻辑交给ReadCompletionHandler
 	result.read(buffer, buffer, new ReadCompletionHandler(result));
     }
 
     @Override
     public void failed(Throwable exc, AsyncTimeServerHandler attachment) {
 	exc.printStackTrace();
+	//请求失败，计数器减一，服务端主线程将关闭
 	attachment.latch.countDown();
     }
 

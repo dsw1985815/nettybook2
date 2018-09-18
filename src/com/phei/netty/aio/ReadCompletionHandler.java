@@ -38,6 +38,7 @@ public class ReadCompletionHandler implements
 
     @Override
     public void completed(Integer result, ByteBuffer attachment) {
+    	//对数据进行flip操作，为后续从缓冲区读取数据做准备
 	attachment.flip();
 	byte[] body = new byte[attachment.remaining()];
 	attachment.get(body);
@@ -52,12 +53,14 @@ public class ReadCompletionHandler implements
 	}
     }
 
+    //处理返回值
     private void doWrite(String currentTime) {
 	if (currentTime != null && currentTime.trim().length() > 0) {
 	    byte[] bytes = (currentTime).getBytes();
 	    ByteBuffer writeBuffer = ByteBuffer.allocate(bytes.length);
 	    writeBuffer.put(bytes);
 	    writeBuffer.flip();
+	    //将字符串转化成Byte数组，并放入到缓冲区对象中，进行发送，由于channel是异步非阻塞的，所以可能发送多次，直到发送成功。
 	    channel.write(writeBuffer, writeBuffer,
 		    new CompletionHandler<Integer, ByteBuffer>() {
 			@Override
@@ -70,7 +73,8 @@ public class ReadCompletionHandler implements
 			@Override
 			public void failed(Throwable exc, ByteBuffer attachment) {
 			    try {
-				channel.close();
+					//发生异常关闭链路
+					channel.close();
 			    } catch (IOException e) {
 				// ingnore on close
 			    }
@@ -82,6 +86,7 @@ public class ReadCompletionHandler implements
     @Override
     public void failed(Throwable exc, ByteBuffer attachment) {
 	try {
+		//发生异常关闭链路
 	    this.channel.close();
 	} catch (IOException e) {
 	    e.printStackTrace();

@@ -44,11 +44,12 @@ public class TimeServerHandler implements Runnable {
 	BufferedReader in = null;
 	PrintWriter out = null;
 	try {
+		//采用阻塞方式从套接字中获取到输入流，再把结果写入输出流
 	    in = new BufferedReader(new InputStreamReader(
-		    this.socket.getInputStream()));
-	    out = new PrintWriter(this.socket.getOutputStream(), true);
-	    String currentTime = null;
-	    String body = null;
+				this.socket.getInputStream()));
+		out = new PrintWriter(this.socket.getOutputStream(), true);
+		String currentTime = null;
+		String body = null;
 	    while (true) {
 		body = in.readLine();
 		if (body == null)

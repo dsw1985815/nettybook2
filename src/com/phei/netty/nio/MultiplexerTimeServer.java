@@ -45,14 +45,19 @@ public class MultiplexerTimeServer implements Runnable {
      */
     public MultiplexerTimeServer(int port) {
 	try {
+		//创建selector 多路复用选择器 ，一个selector可以轮询多个channel ，由于JDK使用了epoll()代替了传统的select实现，selector没有句柄限制。
 	    selector = Selector.open();
+	    //Channel接口分为2大类，一种处理网络读写的SocketChannel和ServerSocketChannel，另一种是文件炒作的FileChannel
+		//创建ServerSocketChannel 并设置为异步非阻塞 绑定端口，设置backlog（requested maximum length of the queue of incoming connections.）
 	    servChannel = ServerSocketChannel.open();
 	    servChannel.configureBlocking(false);
 	    servChannel.socket().bind(new InetSocketAddress(port), 1024);
-	    servChannel.register(selector, SelectionKey.OP_ACCEPT);
+		//把channel注册到selector，监听SelectionKey.OP_ACCEPT操作位
+		servChannel.register(selector, SelectionKey.OP_ACCEPT);
 	    System.out.println("The time server is start in port : " + port);
 	} catch (IOException e) {
 	    e.printStackTrace();
+	    //发生异常直接退出
 	    System.exit(1);
 	}
     }
@@ -70,6 +75,7 @@ public class MultiplexerTimeServer implements Runnable {
     public void run() {
 	while (!stop) {
 	    try {
+	    	//每隔1秒就唤醒selector，当有处于就绪状态的Channel时，selector返回Channel的SelectionKey集合，迭代集合进行网络读写
 		selector.select(1000);
 		Set<SelectionKey> selectedKeys = selector.selectedKeys();
 		Iterator<SelectionKey> it = selectedKeys.iterator();
@@ -101,6 +107,7 @@ public class MultiplexerTimeServer implements Runnable {
 	    }
     }
 
+    //使用buffer读写，定义一个1M大小的缓冲区用来处理码流。
     private void handleInput(SelectionKey key) throws IOException {
 
 	if (key.isValid()) {
@@ -140,6 +147,9 @@ public class MultiplexerTimeServer implements Runnable {
 	}
     }
 
+    //把应答发回给调用方，首先将字符串编码成字节数组，根据字节数组的容量创建ByteBuffer，调用put方法把自己数组复制到缓冲区，然后对
+	//缓冲区使用flip()操作，最后调用SocketChannel的write方法将缓冲区中的字节数组发出去。由于Channel是异步非阻塞，并不能一次性把数据都
+	//发出去，有可能出现半包问题。
     private void doWrite(SocketChannel channel, String response)
 	    throws IOException {
 	if (response != null && response.trim().length() > 0) {
